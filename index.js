@@ -21,7 +21,7 @@ var AppIOClient = new Class({
   ON_CONNECT_ERROR: 'onConnectError',
 
   //request: null,
-	conn: null,
+	io: null,
 
   api: {},
 
@@ -150,7 +150,9 @@ var AppIOClient = new Class({
 
 		let	path = (typeof(this.options.path) !== "undefined") ? this.options.path : '/';
 
-		this.conn = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path)
+		this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path)
+
+		this.io.on('connection', function(socket){ this.socket(socket) }.bind(this))
 
 		if(this.logger)
 			this.logger.extend_app(this);
@@ -208,198 +210,212 @@ var AppIOClient = new Class({
 		 * - end
 		 * */
 
-		this.apply_routes(this.options.routes, false);
+		// this.apply_routes(this.options.routes, false);
 
 
   },
-  apply_routes: function(routes, is_api){
-		var uri = '';
+	socket: function(socket){
 
+    if(this.options.io){
+      if(this.options.io.rooms){
 
-		var instance = this;
+        Array.each(this.options.io.rooms, function(room){
+          socket.join(room, () => {
+            let rooms = Object.keys(socket.rooms);
+            //console.log(rooms); // [ <socket.id>, 'room 237' ]
+          });
+        }.bind(this))
+      }
 
-		Array.each(this.methods, function(verb){
+      // if(this.options.io.routes)
 
+      this.apply_io_routes(socket)
+    }
 
-			/**
-			 * @callback_alt if typeof function, gets executed instead of the method asigned to the matched route (is an alternative callback, instead of the default usage)
-			 * */
-			instance[verb] = function(verb, original_func, options, callback_alt){
-
-				// let	path = (typeof(this.options.path) !== "undefined") ? this.options.path : '';
-
-				options = options || {};
-
-				debug_internals('instance[verb] routes %o', routes);
-
-
-				debug_internals('routes %o', routes);
-				debug_internals('verb %s', verb);
-				debug_internals('routes[verb] %o', routes[verb]);
-
-				if(routes[verb]){
-					// var uri_matched = false;
-
-					Array.each(routes[verb], function(route){
-						debug_internals('instance[verb] route.path %s', route.path);
-
-						route.path = route.path || '';
-						options.uri = options.uri || '';
-
-						var keys = []
-						var re = pathToRegexp(route.path, keys);
-
-
-						if(options.uri != null && re.test(options.uri) == true){
-							uri_matched = true;
-
-							var callbacks = [];
-
-							/**
-							 * if no callbacks defined for a route, you should use callback_alt param
-							 * */
-							if(route.callbacks && route.callbacks.length > 0){
-								route.callbacks.each(function(fn){
-									//////console.log('route function: ' + fn);
-
-									//if the callback function, has the same name as the verb, we had it already copied as "original_func"
-									if(fn == verb){
-										callbacks.push({ func: original_func.bind(this), name: fn });
-									}
-									else{
-										callbacks.push({ func: this[fn].bind(this), name: fn });
-									}
-
-								}.bind(this));
-							}
-
-
-							var merged = {};
-
-							let response = function(err, resp){
-
-								if(resp){
-									let cast_resp = null;
-									if(resp[0]){
-										cast_resp = [];
-
-
-										Array.each(resp, function(value, index){
-											cast_resp.push(value);
-										})
-
-										resp = cast_resp;
-
-
-									}
-									else{
-										cast_resp = {};
-										Object.each(resp, function(value, key){
-											cast_resp[key] = value;
-										})
-
-										resp = cast_resp;
-
-
-									}
-								}
-
-
-								if(err){
-									//this.fireEvent(this.ON_CONNECT_ERROR, {options: merged, uri: options.uri, route: route.path, error: err });
-									this.fireEvent(this.ON_CONNECT_ERROR, {uri: options.uri, route: route.path, error: err });
-								}
-								else{
-									//this.fireEvent(this.ON_CONNECT, {options: merged, uri: options.uri, route: route.path, response: resp, body: body });
-									//this.fireEvent(this.ON_CONNECT, {uri: options.uri, route: route.path, response: resp });
-									this.fireEvent(this.ON_CONNECT, {uri: options.uri, route: route.path, response: resp, options: options });
-								}
-
-
-								if(typeof(callback_alt) == 'function' || callback_alt instanceof Function){
-									var profile = 'ID['+this.options.id+']:METHOD['+verb+']:PATH['+merged.uri+']:CALLBACK[*callback_alt*]';
-
-									if(process.env.PROFILING_ENV && this.logger) this.profile(profile);
-
-									//callback_alt(err, resp, body, {options: merged, uri: options.uri, route: route.path });
-									callback_alt(err, resp, {uri: options.uri, route: route.path, options: options });
-
-									if(process.env.PROFILING_ENV && this.logger) this.profile(profile);
-								}
-								else{
-									Array.each(callbacks, function(fn){
-										var callback = fn.func;
-										var name = fn.name;
-
-										var profile = 'ID['+this.options.id+']:METHOD['+verb+']:PATH['+merged.uri+']:CALLBACK['+name+']';
-
-										if(process.env.PROFILING_ENV && this.logger) this.profile(profile);
-
-										//callback(err, resp, body, {options: merged, uri: options.uri, route: route.path });
-										callback(err, resp, {uri: options.uri, route: route.path, options: options });
-
-										if(process.env.PROFILING_ENV && this.logger) this.profile(profile);
-
-									}.bind(this))
-								}
-
-
-							}.bind(this);
-
-							var args = options.args || [];
-
-
-							var req_func = null;
-							var db = keys[0];
-
-
-
-							if(db){
-								var name = re.exec(options.uri)[1];
-								// req_func = this.request['database'](name);
-								req_func = this.conn.use(name);
-
-							}
-							else{
-
-								req_func = this.conn;
-
-							}
-
-								args.push(response);
-
-								if(args.length == 0)
-									args = null;
-
-								if(args.length == 1)
-									args = args[0];
-
-
-								req_func[verb].attempt(args, req_func);
-
-
-
-						}
-
-					}.bind(this));
-
-					if(!uri_matched){
-						debug_internals('No routes matched for URI: %s', uri+path+options.uri);
-						throw new Error('No routes matched for URI: '+uri+path+options.uri);
-					}
-				}
-				else{
-					debug_internals('No routes defined for method:  %s', verb.toUpperCase());
-					throw new Error('No routes defined for method: '+verb.toUpperCase());
-
-				}
-
-
-			}.bind(this, verb, this[verb]);//copy the original function if there are func like this.get, this.post, etc
-
-		}.bind(this));
-
-	},
+    // socket.on('disconnect', function () {
+    //
+    // });
+  },
+	apply_io_routes: function(socket){
+
+		if(this.options.io.routes){
+			// let app = this.io;
+
+			Object.each(this.options.io.routes, function(routes, message){
+
+        console.log('message', message)
+
+        let route_index = 0
+				routes.each(function(route){//each array is a route
+					var path = route.path;
+
+          let current = null;
+          let prev = null;
+
+          for(let i = route.callbacks.length - 1; i >= 0 ; i--){
+            let callback = this.__callback(route.callbacks[i], message)
+
+
+      			if(i == route.callbacks.length - 1){
+      				//console.log('_apply_filters last')
+
+      				if(route.callbacks.length == 1){//if there is only one filter, 'next' must be sent to "output/save"
+
+      					current = undefined
+      					//console.log('_apply_filters last 1')
+
+      				}
+      				else{
+      					let self = this
+      					current = function(socket){
+                  let callback = this.__callback(route.callbacks[i], message)
+      						callback(socket, undefined);
+
+      					}.bind(this);
+
+      					//console.log('_apply_filters last 2')
+
+      				}
+      			}
+      			else if(i != 0){
+      				//console.log('_apply_filters not zero ', i);
+
+      				prev = current;
+      				current = function(socket){
+                let callback = this.__callback(route.callbacks[i], message)
+
+      					callback(socket, function(socket){
+      						prev(socket, undefined);
+      					}.bind(this), this);
+
+      				}.bind(this);
+      			}
+
+      			if(i == 0){//first filter, start running
+      				//console.log('_apply_filters start ', message);
+
+      				// route.callbacks[i](socket, current);
+              if(route.once && route.once === true){
+                socket.once(message, function(){
+                  // //console.log('arguments', args)
+                  callback.attempt([socket, current].append(arguments), this)
+                }.bind(this))
+              }
+              else{
+                socket.on(message, function(){
+                  console.log('message', message)
+                  callback.attempt([socket, current].append(arguments), this)
+                }.bind(this))
+              }
+
+      			}
+
+
+      			//current(doc, opts, prev);
+
+
+      		}
+
+					// var callbacks = [];
+					// route.callbacks.each(function(fn){
+          //   //console.log('apply_io_routes', message)
+					// 	var callback = (typeof(fn) == 'function') ? fn : this[fn].bind(this);
+          //
+					// 	if(process.env.PROFILING_ENV && this.logger){
+					// 		var profile = 'ID['+this.options.id+']:IO:MESSAGE['+message+']:PATH['+path+']:CALLBACK['+fn+']';
+          //
+					// 		var profiling = function(socket, next){
+					// 			//////console.log('---profiling...'+profile);
+					// 			this.profile(profile);
+          //
+          //       callback(socket, next);
+          //
+					// 			this.profile(profile);
+					// 			//////console.log('---end profiling...'+profile);
+					// 		}.bind(this);
+          //
+					// 		// callbacks.push(profiling);
+          //     socket.on(message, profiling(socket, next))
+					// 	}
+					// 	else{
+          //
+					// 		// callbacks.push(callback);
+          //     socket.on(message, callback.pass(socket))
+          //
+					// 	}
+          //
+					// }.bind(this));
+
+
+
+					// app[message](route.path, callbacks);
+					// app[message](route.path, this._parallel(callbacks));
+          // socket.on(message, (socket) => callbacks)
+
+					var perms = [];
+					// var routes = this.options.io.routes;
+					// //var path = (route.path != '' ) ? route.path : '/';
+					// if(message == '*'){
+          //
+					// 	methods.each(function(method){
+					// 		var path_found = false;
+					// 		if(routes[method]){
+					// 			path_found = routes[method].every(function(item){
+					// 				if(item['path'] == '')
+					// 					item['path'] = '/';
+          //
+					// 					return item['path'] == path;
+					// 			});
+          //
+					// 		}
+          //
+					// 		//if(!this.options.routes[method])//ommit verbs that have a specific route already
+					// 		if( !routes[method] || !path_found ){//ommit verbs that have a specific route already
+					// 			perms.push(this.create_authorization_permission(method, this.uuid+'_'+route.path));
+					// 		}
+          //
+					// 	}.bind(this));
+					// }
+					// else{
+						perms.push(this.create_authorization_permission(message, this.uuid+'_io_'+route_index));
+					// }
+          //
+					this.apply_authorization_permissions(perms);
+          //
+					this.apply_authorization_roles_permission(route, perms);
+
+          route_index++
+				}.bind(this));
+
+			}.bind(this));
+		}
+
+  },
+  __callback(fn, message){
+    var callback = (typeof(fn) == 'function') ? fn : this[fn].bind(this);
+
+    if(process.env.PROFILING_ENV && this.logger){
+      // console.log('PROFILING_ENV')
+      var profile = 'ID['+this.options.id+']:IO:MESSAGE['+message+']:CALLBACK['+fn+']';
+
+      var profiling = function(){
+        // console.log('---profiling...'+profile);
+        this.profile(profile);
+
+        callback.attempt(arguments, this);
+
+        this.profile(profile);
+        //////console.log('---end profiling...'+profile);
+      }.bind(this);
+
+      // callbacks.push(profiling);
+      return profiling
+    }
+    else{
+      return callback
+    }
+
+  },
 	use: function(mount, app){
 
 		debug('use instanceOf(app, AppIOClient) %o', instanceOf(app, AppIOClient));
