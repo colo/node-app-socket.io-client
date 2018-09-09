@@ -215,6 +215,7 @@ var AppIOClient = new Class({
 
   },
 	socket: function(socket){
+		this.fireEvent(this.ON_CONNECT, socket)
 
     if(this.options.io){
       if(this.options.io.rooms){
