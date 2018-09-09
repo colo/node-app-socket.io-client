@@ -1,4 +1,4 @@
-IO'use strict'
+'use strict'
 
 var App = require('node-app'),
 		path = require('path'),
