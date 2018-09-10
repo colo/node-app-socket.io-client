@@ -41,9 +41,11 @@ var AppIOClient = new Class({
 		port: 80,
 		// db: '',
 
-		// io: {
-    //
-		// },
+		io: {
+			// manager: new io.Manager({
+			// 	autoConnect: false
+			// })
+		},
 
 
 		logs: null,
@@ -150,9 +152,9 @@ var AppIOClient = new Class({
 
 		let	path = (typeof(this.options.path) !== "undefined") ? this.options.path : '/';
 
-		this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path)
+		this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.io)
 
-		this.io.on('connection', function(socket){ this.socket(socket) }.bind(this))
+		this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
 
 		if(this.logger)
 			this.logger.extend_app(this);
@@ -215,7 +217,8 @@ var AppIOClient = new Class({
 
   },
 	socket: function(socket){
-		this.fireEvent(this.ON_CONNECT, socket)
+		console.log('node-app-socker.io-client/socket')
+		this.fireEvent(this.ON_CONNECT)
 
     if(this.options.io){
       if(this.options.io.rooms){
@@ -349,43 +352,43 @@ var AppIOClient = new Class({
 
 
 
-					// app[message](route.path, callbacks);
-					// app[message](route.path, this._parallel(callbacks));
-          // socket.on(message, (socket) => callbacks)
-
-					var perms = [];
-					// var routes = this.options.io.routes;
-					// //var path = (route.path != '' ) ? route.path : '/';
-					// if(message == '*'){
+					// // app[message](route.path, callbacks);
+					// // app[message](route.path, this._parallel(callbacks));
+          // // socket.on(message, (socket) => callbacks)
           //
-					// 	methods.each(function(method){
-					// 		var path_found = false;
-					// 		if(routes[method]){
-					// 			path_found = routes[method].every(function(item){
-					// 				if(item['path'] == '')
-					// 					item['path'] = '/';
+					// var perms = [];
+					// // var routes = this.options.io.routes;
+					// // //var path = (route.path != '' ) ? route.path : '/';
+					// // if(message == '*'){
+          // //
+					// // 	methods.each(function(method){
+					// // 		var path_found = false;
+					// // 		if(routes[method]){
+					// // 			path_found = routes[method].every(function(item){
+					// // 				if(item['path'] == '')
+					// // 					item['path'] = '/';
+          // //
+					// // 					return item['path'] == path;
+					// // 			});
+          // //
+					// // 		}
+          // //
+					// // 		//if(!this.options.routes[method])//ommit verbs that have a specific route already
+					// // 		if( !routes[method] || !path_found ){//ommit verbs that have a specific route already
+					// // 			perms.push(this.create_authorization_permission(method, this.uuid+'_'+route.path));
+					// // 		}
+          // //
+					// // 	}.bind(this));
+					// // }
+					// // else{
+					// 	perms.push(this.create_authorization_permission(message, this.uuid+'_io_'+route_index));
+					// // }
+          // //
+					// this.apply_authorization_permissions(perms);
+          // //
+					// this.apply_authorization_roles_permission(route, perms);
           //
-					// 					return item['path'] == path;
-					// 			});
-          //
-					// 		}
-          //
-					// 		//if(!this.options.routes[method])//ommit verbs that have a specific route already
-					// 		if( !routes[method] || !path_found ){//ommit verbs that have a specific route already
-					// 			perms.push(this.create_authorization_permission(method, this.uuid+'_'+route.path));
-					// 		}
-          //
-					// 	}.bind(this));
-					// }
-					// else{
-						perms.push(this.create_authorization_permission(message, this.uuid+'_io_'+route_index));
-					// }
-          //
-					this.apply_authorization_permissions(perms);
-          //
-					this.apply_authorization_roles_permission(route, perms);
-
-          route_index++
+          // route_index++
 				}.bind(this));
 
 			}.bind(this));
