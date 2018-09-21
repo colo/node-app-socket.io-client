@@ -217,7 +217,7 @@ var AppIOClient = new Class({
 
   },
 	socket: function(socket){
-		console.log('node-app-socker.io-client/socket')
+		//console.log('node-app-socker.io-client/socket')
 		this.fireEvent(this.ON_CONNECT)
 
     if(this.options.io){
@@ -226,7 +226,7 @@ var AppIOClient = new Class({
         Array.each(this.options.io.rooms, function(room){
           socket.join(room, () => {
             let rooms = Object.keys(socket.rooms);
-            //console.log(rooms); // [ <socket.id>, 'room 237' ]
+            ////console.log(rooms); // [ <socket.id>, 'room 237' ]
           });
         }.bind(this))
       }
@@ -247,7 +247,7 @@ var AppIOClient = new Class({
 
 			Object.each(this.options.io.routes, function(routes, message){
 
-        console.log('message', message)
+        //console.log('message', message)
 
         let route_index = 0
 				routes.each(function(route){//each array is a route
@@ -261,12 +261,12 @@ var AppIOClient = new Class({
 
 
       			if(i == route.callbacks.length - 1){
-      				//console.log('_apply_filters last')
+      				////console.log('_apply_filters last')
 
       				if(route.callbacks.length == 1){//if there is only one filter, 'next' must be sent to "output/save"
 
       					current = undefined
-      					//console.log('_apply_filters last 1')
+      					////console.log('_apply_filters last 1')
 
       				}
       				else{
@@ -277,12 +277,12 @@ var AppIOClient = new Class({
 
       					}.bind(this);
 
-      					//console.log('_apply_filters last 2')
+      					////console.log('_apply_filters last 2')
 
       				}
       			}
       			else if(i != 0){
-      				//console.log('_apply_filters not zero ', i);
+      				////console.log('_apply_filters not zero ', i);
 
       				prev = current;
       				current = function(socket){
@@ -296,18 +296,18 @@ var AppIOClient = new Class({
       			}
 
       			if(i == 0){//first filter, start running
-      				//console.log('_apply_filters start ', message);
+      				////console.log('_apply_filters start ', message);
 
       				// route.callbacks[i](socket, current);
               if(route.once && route.once === true){
                 socket.once(message, function(){
-                  // //console.log('arguments', args)
+                  // ////console.log('arguments', args)
                   callback.attempt([socket, current].append(arguments), this)
                 }.bind(this))
               }
               else{
                 socket.on(message, function(){
-                  console.log('message', message)
+                  //console.log('message', message)
                   callback.attempt([socket, current].append(arguments), this)
                 }.bind(this))
               }
@@ -322,20 +322,20 @@ var AppIOClient = new Class({
 
 					// var callbacks = [];
 					// route.callbacks.each(function(fn){
-          //   //console.log('apply_io_routes', message)
+          //   ////console.log('apply_io_routes', message)
 					// 	var callback = (typeof(fn) == 'function') ? fn : this[fn].bind(this);
           //
 					// 	if(process.env.PROFILING_ENV && this.logger){
 					// 		var profile = 'ID['+this.options.id+']:IO:MESSAGE['+message+']:PATH['+path+']:CALLBACK['+fn+']';
           //
 					// 		var profiling = function(socket, next){
-					// 			//////console.log('---profiling...'+profile);
+					// 			////////console.log('---profiling...'+profile);
 					// 			this.profile(profile);
           //
           //       callback(socket, next);
           //
 					// 			this.profile(profile);
-					// 			//////console.log('---end profiling...'+profile);
+					// 			////////console.log('---end profiling...'+profile);
 					// 		}.bind(this);
           //
 					// 		// callbacks.push(profiling);
@@ -399,17 +399,17 @@ var AppIOClient = new Class({
     var callback = (typeof(fn) == 'function') ? fn : this[fn].bind(this);
 
     if(process.env.PROFILING_ENV && this.logger){
-      // console.log('PROFILING_ENV')
+      // //console.log('PROFILING_ENV')
       var profile = 'ID['+this.options.id+']:IO:MESSAGE['+message+']:CALLBACK['+fn+']';
 
       var profiling = function(){
-        // console.log('---profiling...'+profile);
+        // //console.log('---profiling...'+profile);
         this.profile(profile);
 
         callback.attempt(arguments, this);
 
         this.profile(profile);
-        //////console.log('---end profiling...'+profile);
+        ////////console.log('---end profiling...'+profile);
       }.bind(this);
 
       // callbacks.push(profiling);
