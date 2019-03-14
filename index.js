@@ -152,9 +152,20 @@ var AppIOClient = new Class({
 
 		let	path = (typeof(this.options.path) !== "undefined") ? this.options.path : '/';
 
-		this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.io)
+		// this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.io)
+		if(typeof this.options.io == 'function') {
 
-		this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
+			this.io = this.options.io
+			this.options.io = undefined
+			this.socket(this.io)
+		}
+		else{
+			debug_internals('initialize with this.options.io socket', this.options.io)
+			this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.options.io)
+			this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
+		}
+
+
 
 		if(this.logger)
 			this.logger.extend_app(this);
