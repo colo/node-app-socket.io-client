@@ -153,17 +153,21 @@ var AppIOClient = new Class({
 		let	path = (typeof(this.options.path) !== "undefined") ? this.options.path : '/';
 
 		// this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.io)
-		if(typeof this.options.io == 'function') {
+		// if(typeof this.options.io == 'function') {
+    //
+		// 	this.io = this.options.io
+		// 	this.options.io = undefined
+		// 	this.socket(this.io)
+		// }
+		// else{
+			debug_internals('initialize with this.options.io socket', this.options)
+			if(this.options.scheme && this.options.host && this.options.port)
+				this.add_io(
+					io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.options.io)
+				)
 
-			this.io = this.options.io
-			this.options.io = undefined
-			this.socket(this.io)
-		}
-		else{
-			debug_internals('initialize with this.options.io socket', this.options.io)
-			this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.options.io)
-			this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
-		}
+
+		// }
 
 
 
@@ -227,11 +231,20 @@ var AppIOClient = new Class({
 
 
   },
+	add_io: function(io){
+		debug_internals('add_io', io.connected)
+		this.io = io
+		if(io.connected == true) this.socket(this.io)
+		else this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
+	},
 	socket: function(socket){
 		//console.log('node-app-socker.io-client/socket')
-		this.fireEvent(this.ON_CONNECT)
+
 
     if(this.options.io){
+			/**
+			* WTF?: this is server side code
+			*
       if(this.options.io.rooms){
 
         Array.each(this.options.io.rooms, function(room){
@@ -241,11 +254,13 @@ var AppIOClient = new Class({
           });
         }.bind(this))
       }
+			**/
 
       // if(this.options.io.routes)
 
       this.apply_io_routes(socket)
     }
+
 
     // socket.on('disconnect', function () {
     //
@@ -405,6 +420,7 @@ var AppIOClient = new Class({
 			}.bind(this));
 		}
 
+		this.fireEvent(this.ON_CONNECT)
   },
   __callback(fn, message){
     var callback = (typeof(fn) == 'function') ? fn : this[fn].bind(this);
