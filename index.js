@@ -422,6 +422,82 @@ var AppIOClient = new Class({
 
 		this.fireEvent(this.ON_CONNECT)
   },
+	remove_io_routes: function(){
+
+		let socket = this.io
+		if(this.options.io.routes){
+			// let app = this.io;
+
+			Object.each(this.options.io.routes, function(routes, message){
+
+        //console.log('message', message)
+
+        let route_index = 0
+				routes.each(function(route){//each array is a route
+					var path = route.path;
+
+          let current = null;
+          let prev = null;
+
+          for(let i = route.callbacks.length - 1; i >= 0 ; i--){
+            // let callback = this.__callback(route.callbacks[i], message)
+
+
+      			// if(i == route.callbacks.length - 1){
+      			// 	////console.log('_apply_filters last')
+            //
+      			// 	if(route.callbacks.length == 1){//if there is only one filter, 'next' must be sent to "output/save"
+            //
+      			// 		current = undefined
+      			// 		////console.log('_apply_filters last 1')
+            //
+      			// 	}
+      			// 	else{
+      			// 		let self = this
+      			// 		current = function(socket){
+            //       let callback = this.__callback(route.callbacks[i], message)
+      			// 			callback(socket, undefined);
+            //
+      			// 		}.bind(this);
+            //
+      			// 		////console.log('_apply_filters last 2')
+            //
+      			// 	}
+      			// }
+      			// else if(i != 0){
+      			// 	////console.log('_apply_filters not zero ', i);
+            //
+      			// 	prev = current;
+      			// 	current = function(socket){
+            //     let callback = this.__callback(route.callbacks[i], message)
+            //
+      			// 		callback(socket, function(socket){
+      			// 			prev(socket, undefined);
+      			// 		}.bind(this), this);
+            //
+      			// 	}.bind(this);
+      			// }
+
+      			if(i == 0){//first filter, start running
+
+              socket.removeAllListeners(message)
+
+
+      			}
+
+
+      			//current(doc, opts, prev);
+
+
+      		}
+
+				}.bind(this));
+
+			}.bind(this));
+		}
+
+
+  },
   __callback(fn, message){
     var callback = (typeof(fn) == 'function') ? fn : this[fn].bind(this);
 
