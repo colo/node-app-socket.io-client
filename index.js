@@ -238,8 +238,9 @@ var AppIOClient = new Class({
 		else this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
 	},
 	socket: function(socket){
-		//console.log('node-app-socker.io-client/socket')
+		debug('CONNECTED, %o', socket)
 
+		this.connected = socket.connected
 
     if(this.options.io){
 			/**
@@ -258,13 +259,15 @@ var AppIOClient = new Class({
 
       // if(this.options.io.routes)
 
-      this.apply_io_routes(socket)
+
     }
 
+		this.apply_io_routes(socket)
 
-    // socket.on('disconnect', function () {
-    //
-    // });
+    socket.on('disconnect', function () {
+    	this.connected = socket.connected
+			debug('DISCONNECTED, %o', socket)
+    }.bind(this));
   },
 	apply_io_routes: function(socket){
 
