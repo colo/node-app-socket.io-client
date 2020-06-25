@@ -3,15 +3,14 @@
 var App = require('node-app'),
 		path = require('path'),
 		fs = require('fs'),
-		IOWrapper = require('./wrapper');
 		// pathToRegexp = require('path-to-regexp'),
-		// io = require('socket.io-client');
+		io = require('socket.io-client');
 
 
 
-var debug = require('debug')('node-app-socket.io-client');
-var debug_events = require('debug')('node-app-socket.io-client:Events');
-var debug_internals = require('debug')('node-app-socket.io-client:Internals');
+var debug = require('debug')('app-socket.io-client');
+var debug_events = require('debug')('app-socket.io-client:Events');
+var debug_internals = require('debug')('app-socket.io-client:Internals');
 
 
 var AppIOClient = new Class({
@@ -22,7 +21,7 @@ var AppIOClient = new Class({
   ON_CONNECT_ERROR: 'onConnectError',
 
   //request: null,
-	io: undefined,
+	io: null,
 
   api: {},
 
@@ -153,14 +152,19 @@ var AppIOClient = new Class({
 
 		let	path = (typeof(this.options.path) !== "undefined") ? this.options.path : '/';
 
-
-
+		// this.io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.io)
+		// if(typeof this.options.io == 'function') {
+    //
+		// 	this.io = this.options.io
+		// 	this.options.io = undefined
+		// 	this.socket(this.io)
+		// }
+		// else{
 			debug_internals('initialize with this.options.io socket', this.options)
-			if(this.options.scheme && this.options.host && this.options.port){
-				// let io = new IOWrapper({uri: this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path})
-				let io = new IOWrapper(this.options)
-				this.add_io(io)
-			}
+			if(this.options.scheme && this.options.host && this.options.port)
+				this.add_io(
+					io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.options.io)
+				)
 
 
 		// }
@@ -228,13 +232,10 @@ var AppIOClient = new Class({
 
   },
 	add_io: function(io){
-		if(this.io === undefined && io){
-			debug_internals('add_io', io)
-			this.io = io
-			if(io.connected == true) this.socket(this.io)
-			else this.io.addEvent('connect', function(){ this.socket(io) }.bind(this))
-			// else this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
-		}
+		debug_internals('add_io', io.connected)
+		this.io = io
+		if(io.connected == true) this.socket(this.io)
+		else this.io.on('connect', function(){ this.socket(this.io) }.bind(this))
 	},
 	socket: function(socket){
 		debug('CONNECTED, %o', socket)
@@ -263,8 +264,7 @@ var AppIOClient = new Class({
 
 		this.apply_io_routes(socket)
 
-    // socket.on('disconnect', function () {
-		socket.addEvent('disconnect', function () {
+    socket.on('disconnect', function () {
     	this.connected = socket.connected
 			debug('DISCONNECTED, %o', socket)
     }.bind(this));
