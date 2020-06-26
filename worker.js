@@ -10,9 +10,9 @@ try {
   io = require('socket.io-client')
 }
 
-// console.log('io')
-// console.log(io)
-// console.log(self)
+// // console.log('io')
+// // console.log(io)
+// // console.log(self)
 // Post data to parent thread
 // self.postMessage({ foo: 'foo' });
 
@@ -21,7 +21,7 @@ self.addEventListener('connect', function(event) {
   ports.push(port)
   port.start()
 
-  console.log('client connected to shared worker', event)
+  // console.log('client connected to shared worker', event)
 
   port.addEventListener('message', event => handleMessage(event, port), false)
 }, false)
@@ -30,8 +30,8 @@ self.addEventListener('connect', function(event) {
 self.addEventListener('message', event => handleMessage(event, self), false)
 
 function handleMessage(event, port) {
-  console.log('handleMessage')
-  console.log(event.data)
+  // console.log('handleMessage')
+  // console.log(event.data)
 
   if(event && event.data){
     if(event.data.uri){
@@ -62,7 +62,7 @@ function handleMessage(event, port) {
     else if(event.data.on){
       socket.on(event.data.on, function (data) {
         if(ports.length > 0){
-          console.log('sending to ports' + ports.length)
+          // console.log('sending to ports' + ports.length)
           ports.forEach(function(port){
             port.postMessage({'on': event.data.on, result: data})
           })
@@ -89,8 +89,8 @@ function handleMessage(event, port) {
 
 // self.addEventListener('message', function(event){
 //   if(event && event.data){
-//     console.log('message')
-//     console.log(event.data)
+//     // console.log('message')
+//     // console.log(event.data)
 //
 //     if(event.data.uri){
 //       socket = io(event.data.uri,event.data.io)
