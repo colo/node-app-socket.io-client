@@ -4,11 +4,11 @@ const	mootools = require('mootools')
 let io, socket,
   ports = [];
 
-try {
-  importScripts('/socket.io/socket.io.js')
-} catch(e) {
+// try {
+//   importScripts('/socket.io/socket.io.js')
+// } catch(e) {
   io = require('socket.io-client')
-}
+// }
 
 // // console.log('io')
 // // console.log(io)
