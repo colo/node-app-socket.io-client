@@ -38,7 +38,7 @@ module.exports = new Class({
 
 
 
-    if((this.options.type !== 'SharedWorker' || !SharedWorker) && (this.options.type !== 'Worker' || !Worker)){
+    if((this.options.type !== 'SharedWorker' ) && (this.options.type !== 'Worker' || !Worker)){//|| !SharedWorker is undefined on Chrome Android and breaks this ckeck
       this.__io = io(this.options.scheme + '://'+ this.options.host + ':' + this.options.port+path, this.options.io)
       // this.__io.on('connect', function(){
       //   debug('connect')
